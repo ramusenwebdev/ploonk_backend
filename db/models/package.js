@@ -1,19 +1,9 @@
 'use strict';
-const {
-  Model
-} = require('sequelize');
+const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class Package extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
     static associate(models) {
-        Package.hasMany(models.Purchase, {
-            foreignKey: 'package_id',
-            as: 'purchases'
-        });
+
     }
   }
   Package.init({
@@ -24,31 +14,31 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
     },
     name: {
-      type: DataTypes.STRING(100),
-      allowNull: false
+      type: DataTypes.STRING,
+      allowNull: false,
     },
     description: DataTypes.TEXT,
     price: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false
-    },
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+        },
     session_count: {
-      type: DataTypes.INTEGER,
-      allowNull: false
+        type: DataTypes.INTEGER,
+        allowNull: false,
     },
-    duration: {
-      type: DataTypes.INTEGER,
-      allowNull: false
+    duration_seconds: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
     },
     access_level: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 1
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 1
     }
   }, {
     sequelize,
     modelName: 'Package',
-    tableName: 'packages',
+    tableName: 'packages'
   });
   return Package;
 };

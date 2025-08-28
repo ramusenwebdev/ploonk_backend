@@ -9,10 +9,18 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: 'user_id',
             as: 'notifications'
         });
-        User.hasMany(models.Purchase, {
-        foreignKey: 'user_id',
-        as: 'purchases'
-      });
+        User.hasMany(models.Payment, {
+            foreignKey: 'user_id',
+            as: 'payments'
+        });
+        User.hasOne(models.Subscription, {
+            foreignKey: 'user_id',
+            as: 'subscription'
+        });
+        User.hasOne(models.OTP, {
+            foreignKey: 'user_id',
+            as: 'otp'
+        });
     }
   }
   User.init({
@@ -39,7 +47,6 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
     },
     phone_number: DataTypes.STRING,
-    role: DataTypes.STRING,
     is_verified: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,

@@ -3,9 +3,7 @@ const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class HistoryCall extends Model {
     static associate(models) {
-      // HistoryCall dimiliki oleh seorang User
       HistoryCall.belongsTo(models.User, { foreignKey: 'user_id', as: 'user' });
-      // HistoryCall melibatkan seorang Agent
       HistoryCall.belongsTo(models.Agent, { foreignKey: 'agent_id', as: 'agent' });
     }
   }

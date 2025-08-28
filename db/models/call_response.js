@@ -1,25 +1,23 @@
 'use strict';
 const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class OTP extends Model {
+  class CallResponse extends Model {
     static associate(models) {
-      OTP.belongsTo(models.User, { foreignKey: 'user_id', as: 'user' });
     }
   }
-  OTP.init({
+  CallResponse.init({
     id: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
         allowNull: false,
     },
-    user_id: DataTypes.UUID,
-    verification_code: DataTypes.STRING,
-    expires_at: DataTypes.DATE,
+    name: DataTypes.STRING,
+    description : DataTypes.TEXT,
   }, {
     sequelize,
-    modelName: 'OTP',
-    tableName: 'otps',
+    modelName: 'CallResponse',
+    tableName: 'call_responses',
   });
-  return OTP;
+  return CallResponse;
 };

@@ -22,7 +22,7 @@ module.exports = {
         allowNull: false,
         unique: true
       },
-        verification_code_expires_at: {
+       expires_at: {
             type: Sequelize.DATE,
         allowNull: true,
       },

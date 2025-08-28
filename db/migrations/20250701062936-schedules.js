@@ -16,12 +16,8 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
-      start_time: {
+      schedule_time: {
         type: Sequelize.DATE,
-        allowNull: false
-      },
-      duration_minutes: {
-        type: Sequelize.INTEGER,
         allowNull: false
       },
       slot_access_level: {

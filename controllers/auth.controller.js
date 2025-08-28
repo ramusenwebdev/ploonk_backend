@@ -1,9 +1,6 @@
-const { User, OTP } = require('../db/models');
+const { sequelize, User, OTP } = require('../db/models');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { OAuth2Client } = require('google-auth-library');
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-const crypto = require('crypto');
 const emailService = require('../services/email.service');
 
 const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
@@ -14,11 +11,12 @@ const generateToken = (id) => {
   });
 };
 
-exports.register = async (req, res) => {    
+exports.register = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
-    const { name, email, password, phone_number } = req.body;
-
-    if (!name || !email || !password) {
+    const { fullname, email, password, phone_number } = req.body;
+    console.log('Registering user:', fullname, email);
+    if (!fullname || !email || !password) {
       return res.status(400).json({
         status: 'error',
         message: 'Name, email, and password are required',
@@ -26,35 +24,36 @@ exports.register = async (req, res) => {
     }
 
     const newUser = await User.create({
-      name,
+      name : fullname,
       email,
       password,
       phone_number,
-      role: 'user'
     });
 
     const otp = generateOtp();
     const newOTP = await OTP.create({
        user_id: newUser.id,
       verification_code : otp,
-      verification_code_expires_at : new Date(Date.now() + 1 * 60 * 1000),
+      expires_at : new Date(Date.now() + 1 * 60 * 1000),
     });
     await newUser.save();
     await newOTP.save();
 
-    await emailService.sendOtpEmail(email, 'Verify Your Account', otp);
-
+    // await emailService.sendOtpEmail(email, 'Verify Your Account', otp);
+    await t.commit();
      res.status(201).json({
       status: 'success',
       message: 'An OTP has been sent to your email for verification',
     });
   } catch (error) {
+    await t.rollback();
     if (error.name === 'SequelizeUniqueConstraintError') {
       return res.status(400).json({
         status: 'error',
         message: 'Email is already registered',
       });
     }
+    console.error('Error during registration:', error);
     res.status(500).json({
       status: 'error',
       message: error.message,
@@ -63,84 +62,138 @@ exports.register = async (req, res) => {
 };
 
 exports.verifyOtp = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     const { email, otp } = req.body;
-    const user = await User.findOne({ where: { email } });
-    const user_otp = await OTP.findOne({ where: { user_id: user.id } });
 
-    if (!user || user_otp.verification_code !== otp || user_otp.verification_code_expires_at < new Date()) {
+    const user = await User.findOne({
+      where: { email },
+      include: { model: OTP, as: 'otp' },
+    });
+
+    if (!user || !user.otp || user.otp.verification_code !== otp || user.otp.expires_at < new Date()) {
       return res.status(400).json({ status: 'fail', message: 'Invalid or expired OTP' });
     }
 
     user.is_verified = true;
-    await user.save();
+    await user.save({ transaction: t });
 
-    res.status(200).json({ status: 'success', message: 'Email successfully verified' });
+    await t.commit();
+    return res.status(200).json({ status: 'success', message: 'Email successfully verified' });
   } catch (error) {
-
-    res.status(500).json({ status: 'error', message: error.message });
+    console.error(error.message);
+    await t.rollback();
+    return res.status(500).json({ status: 'error', message: error.message });
   }
 };
 
 exports.resendOtp = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     const { email } = req.body;
-    const user = await User.findOne({ where: { email } });
-    const user_otp = await OTP.findOne({ where: { user_id: user.id } });
-
-    if (user && !user.is_verified) {
-      const otp = generateOtp();
-      user_otp.verification_code = otp;
-      user_otp.verification_code_expires_at = new Date(Date.now() + 1 * 60 * 1000);
-      await user_otp.save();
-        await emailService.sendOtpEmail(email, 'Your New OTP Code', otp);
+    if (!email) {
+      return res.status(400).json({ status: 'error', message: 'Email is required' });
     }
-    res.status(200).json({ status: 'success', message: 'If your email is registered, you will receive a new OTP code' });
+
+    const user = await User.findOne({
+      where: { email },
+      include: { model: OTP, as: 'otp' },
+    });
+
+    if (!user || user.is_verified) {
+      return res.status(200).json({
+        status: 'success',
+        message: 'If your email is registered and not verified, you will receive a new OTP.',
+      });
+    }
+
+    const otp = generateOtp();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+    if (user.otp) {
+      user.otp.verification_code = otp;
+      user.otp.expires_at = expiresAt;
+      await user.otp.save({ transaction: t });
+    } else {
+      await OTP.create({
+        userId: user.id,
+        verification_code: otp,
+        expires_at: expiresAt,
+      }, { transaction: t });
+    }
+
+    await emailService.sendOtpEmail(email, 'Your New OTP Code', otp);
+    await t.commit();
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'OTP sent to your email if it is valid and unverified.',
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ status: 'error', message: error.message });
+    await t.rollback();
+    return res.status(500).json({ status: 'error', message: error.message });
   }
 };
 
-
 exports.forgotPassword = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     const { email } = req.body;
-    const user = await User.findOne({ where: { email } });
-    const user_otp = await OTP.findOne({ where: { user_id: user.id } });
 
-    if (user) {
-      const otp = generateOtp();
-      user_otp.verification_code = otp;
-      user_otp.verification_code_expires_at = new Date(Date.now() + 10 * 60 * 1000);
-      await user_otp.save();
-      await emailService.sendOtpEmail(email, 'Reset Password Anda', otp);
-    }else{
+    const user = await User.findOne({
+      where: { email },
+      include: { model: OTP, as: 'otp' },
+    });
+
+    if (!user) {
       return res.status(404).json({ status: 'fail', message: 'Email is not found' });
     }
 
-    res.status(200).json({ status: 'success', message: 'If your email is registered, you will receive an OTP' });
+    const otp = generateOtp();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    if (user.otp) {
+      user.otp.verification_code = otp;
+      user.otp.expires_at = expiresAt;
+      await user.otp.save({ transaction: t });
+    } else {
+      await OTP.create({
+        userId: user.id,
+        verification_code: otp,
+        expires_at: expiresAt,
+      }, { transaction: t });
+    }
+
+    await emailService.sendOtpEmail(email, 'Reset Password Anda', otp);
+    await t.commit();
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'OTP for password reset sent to your email.',
+    });
   } catch (error) {
-    res.status(500).json({ status: 'error', message: error.message });
+    await t.rollback();
+    return res.status(500).json({ status: 'error', message: error.message });
   }
 };
 
 exports.resetPassword = async (req, res) => {
+    const t = await sequelize.transaction();
   try {
     const { email, otp, newPassword } = req.body;
-    const user = await User.findOne({ where: { email } });
-    const user_otp = await OTP.findOne({ where: { user_id: user.id } });
+    const user = await User.findOne({ where: { email }, include: {model: OTP, as: 'otp'}  });
 
-    if (!user || user_otp.verification_code !== otp || user_otp.verification_code_expires_at < new Date()) {
+    if (!user || user.otp.verification_code !== otp || user.otp.expires_at < new Date()) {
       return res.status(400).json({ status: 'fail', message: 'Invalid or expired OTP' });
     }
     
     user.password = await bcrypt.hash(newPassword, 10);
 
     await user.save();
-
+    await t.commit();
     res.status(200).json({ status: 'success', message: 'Password has been reset. Please login' });
   } catch (error) {
+    await t.rollback();
     res.status(500).json({ status: 'error', message: error.message });
   }
 };

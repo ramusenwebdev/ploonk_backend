@@ -2,7 +2,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('appointments', {
+    await queryInterface.createTable('subscriptions', {
       id: {
         allowNull: false,
         primaryKey: true,
@@ -12,36 +12,45 @@ module.exports = {
       user_id: {
         type: Sequelize.UUID,
         allowNull: false,
-        references: { model: 'users', key: 'id' },
+        references: {
+          model: 'users',
+          key: 'id'
+        },
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
-      agent_id: {
+      package_id: {
         type: Sequelize.UUID,
         allowNull: false,
-        references: { model: 'agents', key: 'id' },
+        references: {
+          model: 'packages',
+          key: 'id'
+        },
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
-      schedule_id: {
-        type: Sequelize.UUID,
-        allowNull: false,
-        unique: true,
-        references: { model: 'schedules', key: 'id' },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
+      sessions_remaining: {
+        type: Sequelize.INTEGER,
+        allowNull: false
+      },
+        duration_remaining : {
+            type: Sequelize.INTEGER,
+            allowNull: true,
+        },
+      start_date: {
+        type: Sequelize.DATE,
+        allowNull: false
+      },
+      end_date: {
+        type: Sequelize.DATE,
+        allowNull: false
       },
       status: {
-        type: Sequelize.ENUM('scheduled', 'completed', 'cancelled'),
+        type: Sequelize.ENUM('active', 'expired', 'completed', 'cancelled'),
         allowNull: false,
+        defaultValue: 'active'
       },
-      response_type_id: {
-        type: Sequelize.UUID,
-        references: { model: 'call_responses', key: 'id' },
-        allowNull: false,
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE',
-      },
+      
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE
@@ -53,6 +62,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('appointments');
+    await queryInterface.dropTable('subscriptions');
   }
 };

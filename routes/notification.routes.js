@@ -4,10 +4,10 @@ const {authenticate, isVerified} = require('../middleware/auth.middleware');
 
 const router = express.Router();
 
-// Semua rute di bawah ini memerlukan otentikasi
-router.use(authenticate);
 
-router.get('/', isVerified, notificationController.getAllNotifications);
-router.patch('/:notificationId/read', isVerified, notificationController.markAsRead);
+router.get('/', authenticate, notificationController.getAllNotifications);
+router.patch('/:id/read', authenticate, notificationController.markAsRead);
+router.patch('/read-all',authenticate, notificationController.markAsReadAll);
+
 
 module.exports = router;

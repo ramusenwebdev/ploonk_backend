@@ -20,7 +20,7 @@ module.exports = {
         type: Sequelize.TEXT
       },
         status: {
-        type: Sequelize.ENUM('available', 'busy'),
+        type: Sequelize.ENUM('available', 'busy', 'error'),
         defaultValue: 'available'
         },
       createdAt: {

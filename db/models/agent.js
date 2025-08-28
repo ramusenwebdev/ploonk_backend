@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-        Agent.hasMany(models.AvailableSlot, {
+        Agent.hasMany(models.Schedule, {
             foreignKey: 'agent_id',
             as: 'slots'
         });

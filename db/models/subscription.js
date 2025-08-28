@@ -1,21 +1,20 @@
 'use strict';
 const { Model } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
-  class Purchase extends Model {
+  class Subscription extends Model {
     static associate(models) {
-      // Purchase dimiliki oleh seorang User
-      Purchase.belongsTo(models.User, {
+      Subscription.belongsTo(models.User, {
         foreignKey: 'user_id',
         as: 'user'
       });
-      // Purchase merujuk ke sebuah Package
-      Purchase.belongsTo(models.Package, {
+      Subscription.belongsTo(models.Package, {
         foreignKey: 'package_id',
         as: 'package'
       });
     }
   }
-  Purchase.init({
+  Subscription.init({
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
@@ -24,19 +23,24 @@ module.exports = (sequelize, DataTypes) => {
     },
     user_id: DataTypes.UUID,
     package_id: DataTypes.UUID,
-    purchase_date: DataTypes.DATE,
     sessions_remaining: DataTypes.INTEGER,
+    duration_remaining: DataTypes.INTEGER,
+    start_date: {
+      type: DataTypes.DATE,
+      allowNull: false
+    },
+    end_date: {
+      type: DataTypes.DATE,
+      allowNull: false
+    },
     status: {
-      type: DataTypes.ENUM('active', 'expired', 'completed'),
+      type: DataTypes.ENUM('active', 'expired', 'completed', 'cancelled'),
       defaultValue: 'active'
     },
-    order_id: DataTypes.STRING,
-    payment_gateway: DataTypes.STRING,
-    payment_status: DataTypes.STRING,
   }, {
     sequelize,
-    modelName: 'Purchase',
-    tableName: 'purchases'
+    modelName: 'Subscription',
+    tableName: 'subscriptions',
   });
-  return Purchase;
+  return Subscription;
 };

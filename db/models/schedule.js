@@ -1,15 +1,15 @@
 'use strict';
 const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class AvailableSlot extends Model {
+  class Schedule extends Model {
     static associate(models) {
-      AvailableSlot.belongsTo(models.Agent, {
-        foreignKey: 'agent_id',
-        as: 'agent'
-      });
+       Schedule.belongsTo(models.Agent, {
+            foreignKey: 'agent_id',
+            as: 'agent',
+        });
     }
   }
-  AvailableSlot.init({
+  Schedule.init({
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
@@ -17,8 +17,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
     },
     agent_id: DataTypes.UUID,
-    start_time: DataTypes.DATE,
-    duration_minutes: DataTypes.INTEGER,
+    schedule_time: DataTypes.DATE,
     slot_access_level: {
       type: DataTypes.INTEGER,
       defaultValue: 1
@@ -29,8 +28,8 @@ module.exports = (sequelize, DataTypes) => {
     }
   }, {
     sequelize,
-    modelName: 'AvailableSlot',
-    tableName: 'available_slots',
+    modelName: 'Schedule',
+    tableName: 'schedules',
   });
-  return AvailableSlot;
+  return Schedule;
 };

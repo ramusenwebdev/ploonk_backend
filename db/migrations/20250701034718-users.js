@@ -26,9 +26,6 @@ module.exports = {
       phone_number: {
         type: Sequelize.STRING
       },
-      role: {
-        type: Sequelize.STRING
-      },
        is_verified: {
          type: Sequelize.BOOLEAN,
             allowNull: false,

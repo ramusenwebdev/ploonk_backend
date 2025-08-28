@@ -1,4 +1,4 @@
-const { sequelize, Appointment, Sip, AvailableSlot, Purchase, Package, Agent, User, Notification } = require('../db/models');
+const { sequelize, Sip, Subscription, Agent, } = require('../db/models');
 const { Op, where } = require('sequelize');
 const asteriskService = require('../services/asterisk.service');
 
@@ -6,7 +6,7 @@ const asteriskService = require('../services/asterisk.service');
 exports.sendSip = async (req, res) => {
     try {
         const sip = await Sip.findOne();
-        console.log('Sip found:', sip);
+        
         res.status(200).json({
             status: 'success',
             data: {
@@ -21,38 +21,57 @@ exports.sendSip = async (req, res) => {
 
 
 exports.startCall = async (req, res) => {
+    const t = await sequelize.transaction();
     try {
         const { sip } = req.body;
-        const user = req.user;
+        
+        const sipUser =await Sip.findOne({ where: { sip }, transaction: t });
 
-        const agent = await Agent.findOne({ where: {status: 'available'}  });
 
-        // const activePurchase = await Purchase.findOne({
-        //     where: {
-        //         user_id: user.id,
-        //         status: 'active',
-        //         sessions_remaining: { [Op.gt]: 0 }
-        //     }
-        // });
+        const agent = await Agent.findOne({ where: { status: 'available' }, transaction: t });
 
-        // if (!activePurchase) {
-        //     return res.status(400).json({ status: 'fail', message: 'Anda tidak memiliki sisa sesi yang cukup untuk melakukan panggilan.' });
-        // }
+        try {
+        await asteriskService.originateCall(sip, req.user, agent);
+        } catch (asteriskError) {
+            console.error('Asterisk error:', asteriskError.message);
 
-        await asteriskService.originateCall(
-            sip,
-            agent.sip,
-            user.name
-            // activePurchase.id
-        );
+            // Rollback transaksi
+            await t.rollback();
+            const failedAgent = await Agent.findByPk(agent.id);
+            console.log('Fetched after rollback:', failedAgent?.status);
 
+            if (failedAgent) {
+                failedAgent.status = 'error';
+                await failedAgent.save();
+                console.log('Agent status updated to error');
+            } else {
+                console.log('Agent not found after rollback');
+            }
+            return res.status(500).json({
+                status: 'error',
+                message: 'Gagal memulai panggilan',
+            });
+        }
+
+        agent.status = 'busy';
+        sipUser.status = 'busy';
+
+        await sipUser.save({ transaction: t });
+        await agent.save({ transaction: t });
+        await t.commit();
         res.status(200).json({
             status: 'success',
             message: 'Panggilan sedang dimulai...'
         });
-
     } catch (error) {
-        console.error('Error starting call:', error);
+            // Cegah rollback dobel
+        if (!t.finished) {
+        await t.rollback();
+        }
         res.status(500).json({ status: 'error', message: 'Gagal memulai panggilan.' });
     }
 };
+
+exports.startCallAppointment = async (req, res) => {
+    
+} 

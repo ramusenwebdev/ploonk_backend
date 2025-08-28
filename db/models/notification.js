@@ -8,7 +8,6 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // Notifikasi dimiliki oleh seorang User
       Notification.belongsTo(models.User, {
         foreignKey: 'user_id',
         as: 'user'
@@ -24,6 +23,10 @@ module.exports = (sequelize, DataTypes) => {
     },
     user_id: {
       type: DataTypes.UUID,
+      allowNull: false,
+    },
+    title: {
+      type: DataTypes.STRING,
       allowNull: false,
     },
     message: {

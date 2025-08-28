@@ -25,7 +25,7 @@ await queryInterface.createTable('packages', {
         type: Sequelize.INTEGER,
         allowNull: false
       },
-      duration: {
+      duration_seconds: {
         type: Sequelize.INTEGER,
         allowNull: false
       },

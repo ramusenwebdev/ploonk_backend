@@ -2,7 +2,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('purchases', {
+    await queryInterface.createTable('session_usages', {
       id: {
         allowNull: false,
         primaryKey: true,
@@ -19,43 +19,24 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
-      package_id: {
+      subscription_id: {
         type: Sequelize.UUID,
         allowNull: false,
         references: {
-          model: 'packages',
+          model: 'subscriptions',
           key: 'id'
         },
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
-      purchase_date: {
+      sessions_date: {
         type: Sequelize.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.NOW
-      },
-      sessions_remaining: {
-        type: Sequelize.INTEGER,
         allowNull: false
       },
-      status: {
-        type: Sequelize.ENUM('active', 'expired', 'completed'),
-        allowNull: false,
-        defaultValue: 'active'
-      },
-       order_id: {
-      type: Sequelize.STRING,
-      allowNull: true,
-      unique: true
-      },
-          payment_gateway: {
-      type: Sequelize.STRING,
-      allowNull: false,
-      },
-     payment_status: {
-         type: Sequelize.ENUM('pending', 'paid', 'failed'),
-      defaultValue: 'pending'
-      },
+        duration_seconds : {
+            type: Sequelize.INTEGER,
+            allowNull: true,
+        },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE
@@ -67,6 +48,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('purchases');
+    await queryInterface.dropTable('session_usages');
   }
 };

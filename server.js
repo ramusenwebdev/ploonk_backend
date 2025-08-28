@@ -4,7 +4,7 @@ dotenv.config();
 
 const app = require('./app');
 const { sequelize } = require('./db/models');
-require('./services/asterisk.service');
+// require('./services/asterisk.service');
 const PORT = process.env.PORT || 3000;
 
 const startServer = async () => {

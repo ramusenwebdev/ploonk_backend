@@ -3,12 +3,11 @@ const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class Appointment extends Model {
     static associate(models) {
-      // Appointment dimiliki oleh seorang User
       Appointment.belongsTo(models.User, { foreignKey: 'user_id', as: 'user' });
-      // Appointment dilayani oleh seorang Agent
       Appointment.belongsTo(models.Agent, { foreignKey: 'agent_id', as: 'agent' });
-      // Appointment berasal dari sebuah AvailableSlot
-      Appointment.belongsTo(models.AvailableSlot, { foreignKey: 'slot_id', as: 'slot' });
+      Appointment.belongsTo(models.Schedule, { foreignKey: 'schedule_id', as: 'schedule' });
+      Appointment.belongsTo(models.CallResponse, { foreignKey: 'response_type_id', as: 'call_response' });
+
     }
   }
   Appointment.init({
@@ -20,12 +19,8 @@ module.exports = (sequelize, DataTypes) => {
     },
     user_id: DataTypes.UUID,
     agent_id: DataTypes.UUID,
-    slot_id: DataTypes.UUID,
-    appointment_time: DataTypes.DATE,
-    type: {
-        type: DataTypes.ENUM('active', 'completed', 'cancelled'),
-      defaultValue: 'active'
-    },
+    schedule_id: DataTypes.UUID,
+    response_type_id:DataTypes.UUID,
     status: {
       type: DataTypes.ENUM('scheduled', 'completed', 'cancelled'),
       defaultValue: 'scheduled'

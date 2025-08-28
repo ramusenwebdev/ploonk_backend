@@ -3,6 +3,7 @@ const { Agent } = require('../db/models');
 
 exports.getAllAgents = async (req, res) => {
   try {
+    
     const agents = await Agent.findAll({ order: [['name', 'ASC']] });
     res.status(200).json({
       status: 'success',
@@ -64,15 +65,20 @@ exports.deleteAgent = async (req, res) => {
 
 exports.getAvailableAgents = async (req, res) => {
     try {
-        const user = req.user;
-        const agents = await Agent.findAll({ order: [['name', 'ASC']] });
-        console.log(agents);
+        const {access_level} = req.user.subscription.package;
+
+        const agents = await Agent.findAll({ where: {status: 'available'}, order: [['name', 'ASC']] });
+
+        let visibleAgents = agents;
+
+        if (access_level === 1) {
+            visibleAgents = agents.slice(0, 2);
+        }
+        
         res.status(200).json({
             status: 'success',
-            message: 'Success',
-            data: {
-                agents
-            }
+            visibleResults: visibleAgents.length,
+            totalAvailable: agents.length
         });
     } catch (error) {
         console.log(error.message);

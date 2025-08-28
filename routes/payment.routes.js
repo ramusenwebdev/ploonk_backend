@@ -1,10 +1,10 @@
 const express = require('express');
-const packageController = require('../controllers/package.controller');
+const paymentController = require('../controllers/payment.controller');
 const { authenticate, isVerified } = require('../middleware/auth.middleware');
 
 const router = express.Router();
 
 
-router.get('/', authenticate, isVerified, packageController.getAllPackages);
+router.get('/my-payments',authenticate, isVerified, paymentController.getMyPayments);
 
 module.exports = router;

@@ -2,7 +2,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('appointments', {
+    await queryInterface.createTable('payments', {
       id: {
         allowNull: false,
         primaryKey: true,
@@ -12,35 +12,40 @@ module.exports = {
       user_id: {
         type: Sequelize.UUID,
         allowNull: false,
-        references: { model: 'users', key: 'id' },
+        references: {
+          model: 'users',
+          key: 'id'
+        },
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
-      agent_id: {
+      subscription_id: {
         type: Sequelize.UUID,
         allowNull: false,
-        references: { model: 'agents', key: 'id' },
+        references: {
+          model: 'subscriptions',
+          key: 'id'
+        },
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
-      schedule_id: {
-        type: Sequelize.UUID,
+      payment_date: {
+        type: Sequelize.DATE,
         allowNull: false,
-        unique: true,
-        references: { model: 'schedules', key: 'id' },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
+        defaultValue: Sequelize.NOW
       },
-      status: {
-        type: Sequelize.ENUM('scheduled', 'completed', 'cancelled'),
-        allowNull: false,
+        order_id: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        unique: true
       },
-      response_type_id: {
-        type: Sequelize.UUID,
-        references: { model: 'call_responses', key: 'id' },
-        allowNull: false,
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE',
+          payment_gateway: {
+      type: Sequelize.STRING,
+      allowNull: false,
+      },
+     status: {
+         type: Sequelize.ENUM('success', 'pending', 'failed'),
+      defaultValue: 'pending'
       },
       createdAt: {
         allowNull: false,
@@ -53,6 +58,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('appointments');
+    await queryInterface.dropTable('payments');
   }
 };
